@@ -1,16 +1,27 @@
 package com.cindrinc.giflang
 
 import android.content.Intent
+import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.ToggleButton
+import com.google.api.services.language.v1beta2.CloudNaturalLanguageRequestInitializer
+import com.google.api.client.extensions.android.json.AndroidJsonFactory
+import com.google.api.client.extensions.android.http.AndroidHttp
+import com.google.api.services.language.v1beta2.CloudNaturalLanguage
+import com.google.api.services.language.v1beta2.model.AnnotateTextRequest
+import com.google.api.services.language.v1beta2.model.AnnotateTextResponse
+import com.google.api.services.language.v1beta2.model.Document
+import com.google.api.services.language.v1beta2.model.Features
 
 
 class MainActivity : AppCompatActivity(), RecognitionListener {
@@ -18,10 +29,15 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 	private lateinit var toggleButton : ToggleButton
 	private lateinit var textView : TextView
 	private lateinit var progressBar : ProgressBar
+	private lateinit var fab : FloatingActionButton
 
 	private lateinit var speech : SpeechRecognizer
 	private lateinit var recognizerIntent : Intent
 	private val LOG_TAG = "VoiceRecogActivity"
+	val naturalLanguageService = CloudNaturalLanguage.Builder(
+			AndroidHttp.newCompatibleTransport(),
+			AndroidJsonFactory(), null).setCloudNaturalLanguageRequestInitializer(
+			CloudNaturalLanguageRequestInitializer("AIzaSyClg2LxhxHGWBy44Tsnn4_xIsovjpc7Uzg")).build()
 
 	private var isHearing = false
 
@@ -31,9 +47,11 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 
+
 		textView = findViewById(R.id.textbox) as TextView
 		toggleButton = findViewById(R.id.toggleButton) as ToggleButton
 		progressBar = findViewById(R.id.progressbar) as ProgressBar
+		fab = findViewById(R.id.fab) as FloatingActionButton
 
 
 		progressBar.visibility = View.INVISIBLE
@@ -59,6 +77,34 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 			}
 			isHearing = !isHearing
 //			textView.setText("Google is your friend.", TextView.BufferType.EDITABLE)
+		}
+
+		fab.setOnClickListener{v ->
+			var features = Features()
+			features.extractDocumentSentiment = true
+			var document =  Document()
+
+
+			document.type = "PLAIN_TEXT"
+			document.language = "en-US"
+			document.content = textView.text.toString()
+
+
+			val request = AnnotateTextRequest()
+			request.document = document
+			request.features = features
+
+			AsyncTask.execute{
+				var response : AnnotateTextResponse = naturalLanguageService.documents()
+													.annotateText(request).execute()
+
+				val sentiment = response.documentSentiment.score
+
+				runOnUiThread{
+					Snackbar.make(v, sentiment.toString(), Snackbar.LENGTH_LONG)
+							.setAction("Action", null).show()
+				}
+			}
 		}
 	}
 
@@ -114,11 +160,8 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 		Log.i(LOG_TAG, "onResults")
 		val matches = results
 				.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-		var text = ""
-		for (result in matches)
-			text += result + "\n"
 
-		textView.setText(text)
+		textView.text = matches[0]
 	}
 
 	override fun onRmsChanged(rmsdB: Float) {
