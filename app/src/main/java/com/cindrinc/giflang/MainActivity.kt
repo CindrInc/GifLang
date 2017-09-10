@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 		for (result in matches)
 			text += result + "\n"
 
-		returnedText.setText(text)
+		textView.setText(text)
 	}
 
 	override fun onRmsChanged(rmsdB: Float) {
