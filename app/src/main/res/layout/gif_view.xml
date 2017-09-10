@@ -1,6 +1,6 @@
-<pl.droidsonroids.gif.GifImageView
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:src=""
-		android:background=""
+<ImageView
+		android:layout_width="100dp"
+		android:layout_height="100dp"
+		android:layout_marginTop="10dp"
+		android:background="@null"
 		xmlns:android="http://schemas.android.com/apk/res/android"/>

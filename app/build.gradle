@@ -25,7 +25,9 @@ dependencies {
 	androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
 		exclude group: 'com.android.support', module: 'support-annotations'
 	})
-	compile 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
+
+	compile 'com.github.bumptech.glide:glide:4.1.1'
+	annotationProcessor 'com.github.bumptech.glide:compiler:4.1.1'
 
 	compile 'com.google.api-client:google-api-client-android:1.22.0'
 	compile 'com.google.apis:google-api-services-speech:v1beta1-rev336-1.22.0'
@@ -40,4 +42,5 @@ dependencies {
 }
 repositories {
 	mavenCentral()
+	maven { url 'https://maven.google.com' }
 }

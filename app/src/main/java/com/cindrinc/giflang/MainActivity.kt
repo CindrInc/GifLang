@@ -1,5 +1,6 @@
 package com.cindrinc.giflang
 
+
 import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
@@ -13,10 +14,8 @@ import android.support.design.widget.Snackbar
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.ToggleButton
+import android.widget.*
+import com.bumptech.glide.Glide
 import com.google.api.services.language.v1beta2.CloudNaturalLanguageRequestInitializer
 import com.google.api.client.extensions.android.json.AndroidJsonFactory
 import org.json.JSONObject
@@ -39,6 +38,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 	private lateinit var textView : TextView
 	private lateinit var progressBar : ProgressBar
 	private lateinit var fab : FloatingActionButton
+	private lateinit var gifHolder : LinearLayout
 
 	private lateinit var speech : SpeechRecognizer
 	private lateinit var recognizerIntent : Intent
@@ -57,10 +57,11 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 		setContentView(R.layout.activity_main)
 
 
-		textView = findViewById(R.id.textbox) as TextView
-		toggleButton = findViewById(R.id.toggleButton) as ToggleButton
-		progressBar = findViewById(R.id.progressbar) as ProgressBar
-		fab = findViewById(R.id.fab) as FloatingActionButton
+		textView = findViewById(R.id.textbox)
+		toggleButton = findViewById(R.id.toggleButton)
+		progressBar = findViewById(R.id.progressbar)
+		fab = findViewById(R.id.fab)
+		gifHolder = findViewById(R.id.gifHolder)
 
 
 		progressBar.visibility = View.INVISIBLE
@@ -76,6 +77,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 
 		toggleButton.setOnCheckedChangeListener { buttonView, isChecked ->
 			if (isChecked) {
+				gifHolder.removeAllViewsInLayout()
 				progressBar.visibility = View.VISIBLE
 				progressBar.isIndeterminate = true
 				speech.startListening(recognizerIntent)
@@ -85,7 +87,6 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 				speech.stopListening()
 			}
 			isHearing = !isHearing
-//			textView.setText("Google is your friend.", TextView.BufferType.EDITABLE)
 		}
 
 		fab.setOnClickListener{v ->
@@ -109,32 +110,48 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 													.annotateText(request).execute()
 
 				val sentiment = response.documentSentiment.score
+
+
+				runOnUiThread{
+					if(sentiment < -0.25) {
+						textView.text = "\uD83D\uDE41"
+					} else if(sentiment > 0.25) {
+						textView.text = "\uD83D\uDE04"
+					} else {
+						textView.text = "\uD83D\uDE11"
+					}
+				}
+
 				val entitiesList = response.entities
 
 				runOnUiThread{
 					Snackbar.make(v, sentiment.toString(), Snackbar.LENGTH_LONG)
 							.setAction("Action", null).show()
 				}
-				var baseUrl = "http://api.giphy.com/v1/gifs/random?api_key=98e6c67ea7d342e48d859b91751e6bd8"
-				var getGif = URL(baseUrl)
-
-				var reader = BufferedReader(InputStreamReader(getGif.openStream()))
-				var jsonText = readAll(reader)
-				var jObj = JSONObject(jsonText)
-
-				runOnUiThread{
-					textView.text = jObj.getJSONObject("data").getString("fixed_height_small_url")
-				}
-
-				for(entity in entitiesList) {
-					var inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-					var gif = inflater.inflate(R.layout.gif_view, findViewById(R.id.gifHolder) as ViewGroup)
-
-					gif.set
+				var baseUrl = "http://api.giphy.com/v1/gifs/random?api_key=98e6c67ea7d342e48d859b91751e6bd8&tag="
 
 
 
-				}
+
+
+				entitiesList
+						.map { URL(baseUrl + it.name) }
+						.map { BufferedReader(InputStreamReader(it.openStream())) }
+						.map { readAll(it) }
+						.map { JSONObject(it) }
+						.forEach {
+							runOnUiThread{
+								var gifUrl = it.getJSONObject("data").getString("image_original_url")
+								var inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+								var gif = inflater.inflate(R.layout.gif_view, null) as ImageView
+
+
+								Glide.with(this).load(gifUrl).into(gif)
+
+								gifHolder.addView(gif)
+
+							}
+						}
 			}
 		}
 	}
