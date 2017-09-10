@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 					Snackbar.make(v, sentiment.toString(), Snackbar.LENGTH_LONG)
 							.setAction("Action", null).show()
 				}
-				var baseUrl = "http://api.giphy.com/v1/gifs/random?api_key=98e6c67ea7d342e48d859b91751e6bd8&tag="
+				var baseUrl = "http://api.giphy.com/v1/gifs/search?api_key=98e6c67ea7d342e48d859b91751e6bd8&q="
 
 
 
@@ -141,7 +141,10 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 						.map { JSONObject(it) }
 						.forEach {
 							runOnUiThread{
-								var gifUrl = it.getJSONObject("data").getString("image_original_url")
+								var gifUrl = it.getJSONArray("data").getJSONObject(0)
+										.getJSONObject("images")
+										.getJSONObject("original")
+										.getString("url")
 								var inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 								var gif = inflater.inflate(R.layout.gif_view, null) as ImageView
 
