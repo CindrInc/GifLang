@@ -1,5 +1,6 @@
 package com.cindrinc.giflang
 
+import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
@@ -10,18 +11,26 @@ import android.speech.SpeechRecognizer
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.ToggleButton
 import com.google.api.services.language.v1beta2.CloudNaturalLanguageRequestInitializer
 import com.google.api.client.extensions.android.json.AndroidJsonFactory
+import org.json.JSONObject
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.services.language.v1beta2.CloudNaturalLanguage
 import com.google.api.services.language.v1beta2.model.AnnotateTextRequest
 import com.google.api.services.language.v1beta2.model.AnnotateTextResponse
 import com.google.api.services.language.v1beta2.model.Document
 import com.google.api.services.language.v1beta2.model.Features
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.Reader
+import java.net.URL
 
 
 class MainActivity : AppCompatActivity(), RecognitionListener {
@@ -82,6 +91,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 		fab.setOnClickListener{v ->
 			var features = Features()
 			features.extractDocumentSentiment = true
+			features.extractEntities = true
 			var document =  Document()
 
 
@@ -99,13 +109,45 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 													.annotateText(request).execute()
 
 				val sentiment = response.documentSentiment.score
+				val entitiesList = response.entities
 
 				runOnUiThread{
 					Snackbar.make(v, sentiment.toString(), Snackbar.LENGTH_LONG)
 							.setAction("Action", null).show()
 				}
+				var baseUrl = "http://api.giphy.com/v1/gifs/random?api_key=98e6c67ea7d342e48d859b91751e6bd8"
+				var getGif = URL(baseUrl)
+
+				var reader = BufferedReader(InputStreamReader(getGif.openStream()))
+				var jsonText = readAll(reader)
+				var jObj = JSONObject(jsonText)
+
+				runOnUiThread{
+					textView.text = jObj.getJSONObject("data").getString("fixed_height_small_url")
+				}
+
+				for(entity in entitiesList) {
+					var inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+					var gif = inflater.inflate(R.layout.gif_view, findViewById(R.id.gifHolder) as ViewGroup)
+
+					gif.set
+
+
+
+				}
 			}
 		}
+	}
+
+	@Throws(IOException::class)
+	private fun readAll(rd: Reader): String {
+		val sb = StringBuilder()
+		var cp: Int = rd.read()
+		while (cp != -1) {
+			sb.append(cp.toChar())
+			cp = rd.read()
+		}
+		return sb.toString()
 	}
 
 	public override fun onResume() {
